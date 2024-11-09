@@ -1,51 +1,26 @@
 import os
 import sys
 from pathlib import Path
-from Shared import token_type_to_xml_tag
-
-
+import CompilationEngine
 from JackTokenizer import JackTokenizer
+from CompilationEngine import CompilationEngine
 
 
-def parse_file(path):
+def parse_file(input_path):
+    output_path = input_path.with_suffix(".xml")
     tokens = []
-    with open(path, 'r', encoding="utf-8") as file:
-        tokenizer = JackTokenizer(file)
-        while tokenizer.has_more_tokens():
-            token = tokenizer.current_token
-            tokenizer.advance()
-            tokens.append(token)
-        file.close()
+    with open(output_path, 'w', encoding='UTF-8') as output_file:
+        with open(input_path, 'r', encoding="utf-8") as input_file:
+            tokenizer = JackTokenizer(input_file)
+            compilation_engine = CompilationEngine(tokenizer, output_file)
+            compilation_engine.compile_class()
+            input_file.close()
+        output_file.close()
     return tokens
 
-
-def writeFile(path, tokens):
-    with open(path, 'w', encoding='UTF-8') as f:
-        f.write("<tokens>" + '\n')
-        for token in tokens:
-            tag = token_type_to_xml_tag[token.token_type]
-            f.write(f"<{tag}>")
-
-            value_to_write = token.value
-            if value_to_write == "<":
-                value_to_write = "&lt;"
-            if value_to_write == ">":
-                value_to_write = "&gt;"
-            if value_to_write == "&":
-                value_to_write = "&amp;"
-
-            f.write(str(value_to_write))
-            f.write(f"</{tag}>\n")
-        f.write("</tokens>" + '\n')
-
-
 def parse_directory(path):
-    path_to_tokens = []
     for file_path in path.glob('*.jack'):
-        tokens = parse_file(file_path)
-        path_to_tokens.append((file_path, tokens))
-    return path_to_tokens
-
+        parse_file(file_path)
 
 def main():
     if len(sys.argv) == 1:
@@ -54,16 +29,9 @@ def main():
         path = Path(sys.argv[1])
 
     if path.is_file():
-        tokens = parse_file(path)
-        output_path = path.with_stem(path.stem + "T").with_suffix(".xml")
-        writeFile(output_path, tokens)
-
+        parse_file(path)
     else:
-        path_to_tokens = parse_directory(path)
-        for (file_path, tokens) in path_to_tokens:
-            output_path = file_path.with_stem(
-                file_path.stem + "T").with_suffix(".xml")
-            writeFile(output_path, tokens)
+        parse_directory(path)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 jack_symbols = [
     "{", "}", "(", ")", "[", "]", ".", ",", ";", "+",
     "-", "*", "/", "&", "|", "<", ">", "=", "~"
@@ -40,7 +39,6 @@ class KEYWORD(Enum):
 
 
 keyword_str_to_constant = {item.name.lower(): item.name for item in KEYWORD}
-
 
 token_type_to_xml_tag = {
     TOKEN_TYPE.KEYWORD: "keyword",

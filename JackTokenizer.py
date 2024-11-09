@@ -1,15 +1,14 @@
-from io import TextIOWrapper
 import string
-from Shared import KEYWORD, TOKEN_TYPE, jack_symbols, keyword_str_to_constant
+from Shared import TOKEN_TYPE, jack_symbols, keyword_str_to_constant
 
 
 class JackToken:
-    def __init__(self, token_type: TOKEN_TYPE, value: str):
+    def __init__(self, token_type, value):
         self.token_type = token_type
         self.value = value
         self.done = False
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"Token({self.token_type}, {self.value})"
 
 
@@ -19,20 +18,20 @@ class JackTokenizer:
     The token types are specified according to Jack grammar.
     """
 
-    def __init__(self, file: TextIOWrapper):
+    def __init__(self, file):
         """Initialize the tokenizer with an input file.
 
         Args:
             file (TextIOWrapper): The input file to tokenize.
         """
-        self.file: TextIOWrapper = file
+        self.file = file
         # Initially there is no current token
         self.current_token = None
         self.next_token = None
         self.advance()
 
     # GENERAL
-    def has_more_tokens(self) -> bool:
+    def has_more_tokens(self):
         """Check if there are more tokens in the input.
 
         Returns:
@@ -40,7 +39,7 @@ class JackTokenizer:
         """
         return self.current_token is not None
 
-    def advance(self) -> None:
+    def advance(self):
         """Get the next token from the input and make it the current token.
 
         This method should only be called if has_more_tokens() returns True.
@@ -146,7 +145,7 @@ class JackTokenizer:
                 self.current_token = JackToken(TOKEN_TYPE.IDENTIFIER, value)
         return
 
-    def token_type(self) -> TOKEN_TYPE:
+    def token_type(self):
         """Get the type of the current token.
 
         Returns:
@@ -154,9 +153,7 @@ class JackTokenizer:
         """
         return self.current_token.token_type
 
-    # TYPE SPECIFIC
-
-    def key_word(self) -> KEYWORD:
+    def key_word(self):
         """Get the keyword which is the current token.
 
         Should be called only when token_type() is TOKEN_TYPE.KEYWORD.
@@ -166,7 +163,7 @@ class JackTokenizer:
         """
         return self.current_token.value
 
-    def symbol(self) -> str:
+    def symbol(self):
         """Returns the character which is the curren token.
 
         Should be called only when token_type() is TOKEN_TYPE.SYMBOL.
@@ -182,7 +179,7 @@ class JackTokenizer:
             return "&amp;"
         return self.current_token.value
 
-    def identifier(self) -> str:
+    def identifier(self):
         """Returns the identifier which is the curren token.
 
         Should be called only when token_type() is TOKEN_TYPE.IDENTIFIER.
@@ -192,7 +189,7 @@ class JackTokenizer:
         """
         return self.current_token.value
 
-    def int_const(self) -> int:
+    def int_const(self):
         """Returns the integer value of the current token
 
         Should be called only when token_type() is TOKEN_TYPE.INT_CONST.
@@ -202,7 +199,7 @@ class JackTokenizer:
         """
         return int(self.current_token.value)
 
-    def string_const(self) -> str:
+    def string_const(self):
         """Returns the string value of the current token, without the two enclosing double quotes
 
         Should be called only when token_type() is TOKEN_TYPE.STRING_CONST.
