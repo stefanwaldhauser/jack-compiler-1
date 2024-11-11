@@ -50,6 +50,20 @@ class CompilationEngine:
         self.write_inline_tag("symbol", value)
         self.tokenizer.advance()
 
+    def compile_string_constant(self):
+        if self.tokenizer.token_type() != TOKEN_TYPE.STRING_CONST:
+            raise ValueError("Parse Error: Expected String Constant Token")
+        value = self.tokenizer.string_const()
+        self.write_inline_tag("stringConstant", value)
+        self.tokenizer.advance()
+
+    def compile_integer_constant(self):
+        if self.tokenizer.token_type() != TOKEN_TYPE.INT_CONST:
+            raise ValueError("Parse Error: Expected Integer Constant Token")
+        value = self.tokenizer.int_const()
+        self.write_inline_tag("integerConstant", value)
+        self.tokenizer.advance()
+
     # Maps to grammar rule: 'class' className '{' classVarDec * subroutineDec * '}'
     def compile_class(self):
         self.write_open_tag("class")
@@ -179,7 +193,7 @@ class CompilationEngine:
     # Maps to the grammar rule: statement*
     def compile_statements(self):
         self.write_open_tag("statements")
-        if self.tokenizer.token_type() == TOKEN_TYPE.KEYWORD:
+        while self.tokenizer.token_type() == TOKEN_TYPE.KEYWORD and self.tokenizer.key_word() in ["let", "if", "while", "do", "return"]:
             if self.tokenizer.key_word() == "let":
                 self.compile_let_statement()
             if self.tokenizer.key_word() == "if":
@@ -292,7 +306,7 @@ class CompilationEngine:
         self.compile_keyword()
 
         # subroutineCall
-        self.compile_subroutine_call()
+        self.handle_term()
 
         # ';'
         self.compile_symbol()
@@ -312,8 +326,65 @@ class CompilationEngine:
         self.compile_symbol()
         self.write_close_tag("returnStatement")
 
+    # maps to the grammar statement: term (op term)*
     def compile_expression(self):
-        pass
+        self.write_open_tag("expression")
+        self.compile_term()
 
-    def compile_subroutine_call(self):
-        pass
+        while self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() in ["+", "-", "*", "/", "&amp;", "|", "&lt;", "&gt;", "="]:
+            # op
+            self.compile_symbol()
+            # term
+            self.compile_term()
+
+        self.write_close_tag("expression")
+
+    def compile_term(self):
+        self.write_open_tag("term")
+        self.handle_term()
+
+        self.write_close_tag("term")
+
+    def handle_term(self):
+        if self.tokenizer.token_type() == TOKEN_TYPE.INT_CONST:
+            self.compile_integer_constant()
+        elif self.tokenizer.token_type() == TOKEN_TYPE.STRING_CONST:
+            self.compile_string_constant()
+        elif self.tokenizer.token_type() == TOKEN_TYPE.KEYWORD and self.tokenizer.key_word() in ["true", "false", "null", "this"]:
+            self.compile_keyword()
+        elif self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() in ["~", "-"]:
+            self.compile_symbol()
+            self.compile_term()
+        elif self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() == "(":
+            self.compile_symbol()
+            self.compile_expression()
+            self.compile_symbol()
+        else:  # TOKEN_TYPE.IDENTIFIER
+            self.compile_identifier()
+            if self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() == ".":
+                self.compile_symbol()
+                self.compile_identifier()
+                self.compile_symbol()
+                self.compile_expression_list()
+                self.compile_symbol()
+
+            if self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() == "[":
+                self.compile_symbol()
+                self.compile_expression()
+                self.compile_symbol()
+
+            if self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() == "(":
+                self.compile_symbol()
+                self.compile_expression_list()
+                self.compile_symbol()
+
+    def compile_expression_list(self):
+        self.write_open_tag("expressionList")
+
+        if not (self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() == ")"):
+            self.compile_expression()
+            while self.tokenizer.token_type() == TOKEN_TYPE.SYMBOL and self.tokenizer.symbol() == ",":
+                self.compile_symbol()
+                self.compile_expression()
+
+        self.write_close_tag("expressionList")
